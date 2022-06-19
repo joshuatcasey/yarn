@@ -1,0 +1,230 @@
+name: Dependencies (Retrieve, Metadata, Compile, Test, Create PR)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */12 * * *'  # https://crontab.guru/every-12-hours
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  select-go-version:
+    name: Select Go Version
+    runs-on: ubuntu-latest
+    outputs:
+      go-version: ${{ steps.select-go-version.outputs.go-version }}
+    steps:
+      - name: Select Go Version
+        id: select-go-version
+        run: echo "::set-output name=go-version::>=1.18.0"
+  get-targets:
+    name: Get Targets
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.get-targets.outputs.targets }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Get Image IDs
+        id: get-targets
+        working-directory: dependency
+        run: |
+          TARGETS=$(cat targets.json)
+          TARGETS="${TARGETS//'%'/'%25'}"
+          TARGETS="${TARGETS//$'\n'/'%0A'}"
+          TARGETS="${TARGETS//$'\r'/'%0D'}"
+          echo "::set-output name=targets::${TARGETS}"
+      - name: Print Targets
+        run: echo "${{ steps.get-targets.outputs.targets }}"
+  retrieve:
+    name: Retrieve new versions
+    needs:
+      - select-go-version
+    runs-on: ubuntu-latest
+    outputs:
+      new_versions: ${{ steps.retrieve.outputs.new_versions }}
+      id: ${{ steps.retrieve.outputs.id }}
+      name: ${{ steps.retrieve.outputs.name }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Setup go '${{ needs.select-go-version.outputs.go-version }}'
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ needs.select-go-version.outputs.go-version }}
+      - name: Retrieve new versions
+        id: retrieve
+        working-directory: dependency
+        run: |
+          BUILDPACK_TOML_PATH=${{ github.workspace }}/buildpack.toml
+          OUTPUT=$(mktemp)
+
+          make retrieve \
+            buildpackTomlPath="${BUILDPACK_TOML_PATH}" \
+            output="${OUTPUT}"
+          
+          VERSIONS=$(jq '.Versions' ${OUTPUT})
+          
+          VERSIONS="${VERSIONS//'%'/'%25'}"
+          VERSIONS="${VERSIONS//$'\n'/'%0A'}"
+          VERSIONS="${VERSIONS//$'\r'/'%0D'}"
+
+          echo "::set-output name=new_versions::${VERSIONS}"
+          echo "::set-output name=id::$(jq '.ID' ${OUTPUT})"
+          echo "::set-output name=name::$(jq '.Name' ${OUTPUT})"
+  metadata:
+    name: Retrieve metadata for new versions
+    needs:
+      - retrieve
+    strategy:
+      matrix:
+        version: ${{ fromJSON(needs.retrieve.outputs.new_versions) }}
+    runs-on: ubuntu-latest
+    outputs:
+      metadata: ${{ steps.metadata.outputs.metadata }}
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Get metadata filepath
+        id: get-metadata-filepath
+        run: |
+          echo "::set-output name=metadata-filepath::${{ github.workspace }}/metadata-${{ matrix.version }}.json"
+      - name: Add Metadata for version
+        id: metadata
+        working-directory: dependency
+        run: |
+          make metadata \
+            version="${{ matrix.version }}" \
+            id=${{ needs.retrieve.outputs.id }} \
+            name=${{ needs.retrieve.outputs.name }} \
+            output="${{ steps.get-metadata-filepath.outputs.metadata-filepath }}"
+      - name: Output metadata '${{ steps.get-metadata-filepath.outputs.metadata-filepath }}'
+        working-directory: dependency
+        run: cat ${{ steps.get-metadata-filepath.outputs.metadata-filepath }}
+      - name: Upload `${{ steps.get-metadata-filepath.outputs.metadata-filepath }}'
+        uses: actions/upload-artifact@v3
+        with:
+          name: metadata-${{ matrix.version }}.json
+          path: ${{ steps.get-metadata-filepath.outputs.metadata-filepath }}
+  compile:
+    name: Compile
+    needs:
+      - retrieve
+      - get-targets
+    strategy:
+      matrix:
+        image: ${{ fromJSON(needs.get-targets.outputs.targets).*.image }}
+        version: ${{ fromJSON(needs.retrieve.outputs.new_versions) }}
+        include: ${{ fromJSON(needs.get-targets.outputs.targets) }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    continue-on-error: true
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Prepare '${{ matrix.image }}'
+        working-directory: dependency/prepare
+        run: ./prepare.sh ${{ matrix.image }}
+      - name: Make Temporary Artifact Directory
+        id: make-outputdir
+        run: |
+          echo "::set-output name=outputdir::$(mktemp -d)"
+      - name: Create matrix.json
+        working-directory: "${{ steps.make-outputdir.outputs.outputdir }}"
+        run: |
+          echo '${{ toJSON(matrix) }}' > matrix.json
+          cat matrix.json
+      - name: Compile version ${{ matrix.version }}
+        id: compile
+        working-directory: dependency
+        run: |
+          make compile \
+            version="${{ matrix.version }}" \
+            output_dir="${{ steps.make-outputdir.outputs.outputdir }}" \
+            target="${{ matrix.target }}"
+      - name: Test
+        working-directory: dependency
+        run: |
+          make test \
+            version="${{ matrix.version }}" \
+            tarball_name="${{ steps.make-outputdir.outputs.outputdir }}/*.tgz"
+      - name: Upload
+        uses: actions/upload-artifact@v3
+        with:
+          name: '${{ fromJSON(needs.retrieve.outputs.id) }}-${{ matrix.version }}-${{ matrix.target }}'
+          path: '${{ steps.make-outputdir.outputs.outputdir }}/*'
+  assemble:
+    name: Assemble Metadata information
+    needs:
+      - metadata
+      - compile
+      - select-go-version
+      - retrieve
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Setup go '${{ needs.select-go-version.outputs.go-version }}'
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ needs.select-go-version.outputs.go-version }}
+      - name: Setup temp dir
+        id: setup-temp-dir
+        run: |
+          echo "::set-output name=artifactPath::$(mktemp -d)"
+      - name: Get all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ${{ steps.setup-temp-dir.outputs.artifactPath }}
+      - name: List everything
+        working-directory: ${{ steps.setup-temp-dir.outputs.artifactPath }}
+        run: ls -lsaRth
+      - name: Run assemble
+        working-directory: libdependency
+        run: |
+          make assemble \
+            id="${{ needs.retrieve.outputs.id }}" \
+            artifactPath=${{ steps.setup-temp-dir.outputs.artifactPath }} \
+            buildpackTomlPath=${{ github.workspace }}/buildpack.toml
+      - name: Checkout Branch 'automation/dependencies/update'
+        uses: paketo-buildpacks/github-config/actions/pull-request/checkout-branch@main
+        with:
+          branch: automation/dependencies/update
+      - name: Show git diff
+        run: |
+          cat ${{ github.workspace }}/buildpack.toml
+          git diff
+      - name: Commit
+        id: commit
+        uses: paketo-buildpacks/github-config/actions/pull-request/create-commit@main
+        with:
+          message: "Updating buildpack.toml with new versions ${{ needs.retrieve.outputs.new_versions }}"
+          pathspec: "."
+      - name: Push Branch 'automation/dependencies/update'
+        if: ${{ steps.commit.outputs.commit_sha != '' }}
+        uses: paketo-buildpacks/github-config/actions/pull-request/push-branch@main
+        with:
+          branch: automation/dependencies/update
+  submit-pull-request:
+    name: Submit Pull Request
+    needs:
+      - assemble
+      - retrieve
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+        with:
+          ref: automation/dependencies/update
+      - name: Open Pull Request
+        run: |
+          gh pr create \
+            --title "Updates buildpack.toml with ${{ needs.retrieve.outputs.new_versions }}" \
+            --body "See commit history for details" \
+            --base main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
