@@ -3,7 +3,7 @@
     "target": "bionic",
     "image": "paketobuildpacks/build:full",
     "stacks": [
-      "io.paketo.stacks.bionic"
+      "io.buildpacks.stacks.bionic"
     ]
   }
 ]

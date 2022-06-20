@@ -13,6 +13,7 @@ import (
 	"github.com/go-enry/go-license-detector/v4/licensedb/filer"
 	"github.com/package-url/packageurl-go"
 	"github.com/paketo-buildpacks/packit/v2/cargo"
+	"github.com/paketo-buildpacks/packit/v2/fs"
 	"github.com/paketo-buildpacks/packit/vacation"
 )
 
@@ -28,14 +29,14 @@ func main() {
 	fmt.Printf("output=%s\n", output)
 
 	source := fmt.Sprintf("https://github.com/yarnpkg/yarn/releases/download/v%[1]s/yarn-v%[1]s.tar.gz", version)
-	sha := "fake-sha"
+	sha := getSHA256Sum(source)
 
 	dependencyVersion := cargo.ConfigMetadataDependency{
 		Version:         version,
 		Source:          source,
 		SourceSHA256:    sha,
 		DeprecationDate: nil,
-		CPE:             fmt.Sprintf("cpe:2.3:a:%[1]s:%[1]s:%[2]s:*:*:*:*:ruby:*:*", id, id, version),
+		CPE:             fmt.Sprintf("cpe:2.3:a:%[1]spkg:%[1]s:%[2]s:*:*:*:*:ruby:*:*", id, version),
 		PURL:            generatePURL(id, version, sha, source),
 		Licenses:        lookupLicenses(source),
 	}
@@ -52,6 +53,34 @@ func main() {
 	}
 
 	fmt.Println(string(bytes))
+}
+
+func getSHA256Sum(url string) string {
+	resp, err := http.Get(url)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	file, err := os.CreateTemp("", "yarn-download")
+	if err != nil {
+		panic(err)
+	}
+
+	defer file.Close()
+
+	// Write the body to file
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	calculatedSHA256, err := fs.NewChecksumCalculator().Sum(file.Name())
+	if err != nil {
+		panic(err)
+	}
+
+	return calculatedSHA256
 }
 
 func lookupLicenses(sourceURL string) []interface{} {
