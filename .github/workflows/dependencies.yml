@@ -190,6 +190,10 @@ jobs:
             id="${{ needs.retrieve.outputs.id }}" \
             artifactPath=${{ steps.setup-temp-dir.outputs.artifactPath }} \
             buildpackTomlPath=${{ github.workspace }}/buildpack.toml
+      - name: Git debugging
+        run:
+          git fetch --all
+          git branch -a
       - name: Checkout Branch 'automation/dependencies/update'
         uses: paketo-buildpacks/github-config/actions/pull-request/checkout-branch@main
         with:
