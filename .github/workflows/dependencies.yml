@@ -206,7 +206,7 @@ jobs:
       - name: Push Branch 'automation/dependencies/update'
         if: ${{ steps.commit.outputs.commit_sha != '' }}
         run: |
-          git push --delete automation/dependencies/update || true
+          git push origin --delete automation/dependencies/update || true
           git push origin automation/dependencies/update
   submit-pull-request:
     name: Submit Pull Request
