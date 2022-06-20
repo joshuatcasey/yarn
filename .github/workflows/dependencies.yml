@@ -190,14 +190,9 @@ jobs:
             id="${{ needs.retrieve.outputs.id }}" \
             artifactPath=${{ steps.setup-temp-dir.outputs.artifactPath }} \
             buildpackTomlPath=${{ github.workspace }}/buildpack.toml
-      - name: Git debugging
-        run:
-          git fetch --all
-          git branch -a
       - name: Checkout Branch 'automation/dependencies/update'
-        uses: paketo-buildpacks/github-config/actions/pull-request/checkout-branch@main
-        with:
-          branch: automation/dependencies/update
+        run: |
+          git checkout -b automation/dependencies/update
       - name: Show git diff
         run: |
           cat ${{ github.workspace }}/buildpack.toml
@@ -210,9 +205,9 @@ jobs:
           pathspec: "."
       - name: Push Branch 'automation/dependencies/update'
         if: ${{ steps.commit.outputs.commit_sha != '' }}
-        uses: paketo-buildpacks/github-config/actions/pull-request/push-branch@main
-        with:
-          branch: automation/dependencies/update
+        run: |
+          git push --delete automation/dependencies/update || true
+          git push origin automation/dependencies/update
   submit-pull-request:
     name: Submit Pull Request
     needs:
