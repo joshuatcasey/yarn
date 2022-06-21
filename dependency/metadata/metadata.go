@@ -68,6 +68,7 @@ func getSHA256Sum(url string) string {
 	}
 
 	defer file.Close()
+	defer os.RemoveAll(file.Name())
 
 	// Write the body to file
 	_, err = io.Copy(file, resp.Body)

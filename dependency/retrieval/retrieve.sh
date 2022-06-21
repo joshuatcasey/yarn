@@ -9,6 +9,7 @@ function main() {
   pushd "${PROGDIR}" > /dev/null
     go build retrieve.go
     ./retrieve "${@:-}"
+    rm ./retrieve
   popd > /dev/null
 }
 

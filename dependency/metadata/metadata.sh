@@ -9,6 +9,7 @@ function main() {
   pushd "${PROGDIR}" > /dev/null
     go build metadata.go
     ./metadata "${@:-}"
+    rm ./metadata
   popd > /dev/null
 }
 

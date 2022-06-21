@@ -7,7 +7,7 @@ image="${1}"
 
 case "${image}" in
   "paketobuildpacks/build:full")
-    echo "no preparation neeeded"
+    echo "no preparation needed"
     ;;
 
   "ubuntu:22.04")
@@ -20,6 +20,6 @@ case "${image}" in
     ;;
 
   *)
-    echo "no preparation neeeded"
+    echo "no preparation needed"
     ;;
 esac
