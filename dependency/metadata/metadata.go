@@ -36,7 +36,7 @@ func main() {
 		Source:          source,
 		SourceSHA256:    sha,
 		DeprecationDate: nil,
-		CPE:             fmt.Sprintf("cpe:2.3:a:%[1]spkg:%[1]s:%[2]s:*:*:*:*:ruby:*:*", id, version),
+		CPE:             fmt.Sprintf("cpe:2.3:a:%[1]spkg:%[1]s:%[2]s:*:*:*:*:*:*:*", id, version),
 		PURL:            generatePURL(id, version, sha, source),
 		Licenses:        lookupLicenses(source),
 	}
