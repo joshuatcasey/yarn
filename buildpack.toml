@@ -17,30 +17,30 @@ api = "0.7"
     yarn = "1.*"
 
   [[metadata.dependencies]]
-    cpe = "cpe:2.3:a:yarnpkg:yarn:1.22.16:*:*:*:*:*:*:*"
+    cpe = "cpe:2.3:a:yarnpkg:yarn:1.22.18:*:*:*:*:*:*:*"
     id = "yarn"
     licenses = ["BSD-2-Clause", "BSD-2-Clause-NetBSD"]
     name = "Yarn"
-    purl = "pkg:generic/yarn@1.22.16?checksum=c0369d6a9aeb4f3b86095c6e6f64de7a7555a888e03260c3f02727636e1f1693&download_url=https://github.com/yarnpkg/yarn/releases/download/v1.22.16/yarn-v1.22.16.tar.gz"
-    sha256 = "2f6ed610be8b877d2abadafde43044280ee73a88e82787853450d9558fb15e70"
-    source = "https://github.com/yarnpkg/yarn/releases/download/v1.22.16/yarn-v1.22.16.tar.gz"
-    source_sha256 = "c0369d6a9aeb4f3b86095c6e6f64de7a7555a888e03260c3f02727636e1f1693"
+    purl = "pkg:generic/yarn@1.22.18?checksum=816e5c073b3d35936a398d1fe769ebbcd517298e3510b649e8fc67cd3a62e113&download_url=https://github.com/yarnpkg/yarn/releases/download/v1.22.18/yarn-v1.22.18.tar.gz"
+    sha256 = "f1c14b6b5a18a1a6d6dbe1e113f62b3d1fe11aee2855b6c9cfe7079480a64db7"
+    source = "https://github.com/yarnpkg/yarn/releases/download/v1.22.18/yarn-v1.22.18.tar.gz"
+    source_sha256 = "816e5c073b3d35936a398d1fe769ebbcd517298e3510b649e8fc67cd3a62e113"
     stacks = ["io.buildpacks.stacks.bionic"]
-    uri = "https://deps.paketo.io/yarn/yarn_1.22.16_linux_noarch_bionic_2f6ed610.tgz"
-    version = "1.22.16"
+    uri = "<UNKNOWN>"
+    version = "1.22.18"
 
   [[metadata.dependencies]]
-    cpe = "cpe:2.3:a:yarnpkg:yarn:1.22.17:*:*:*:*:*:*:*"
+    cpe = "cpe:2.3:a:yarnpkg:yarn:1.22.19:*:*:*:*:*:*:*"
     id = "yarn"
     licenses = ["BSD-2-Clause", "BSD-2-Clause-NetBSD"]
     name = "Yarn"
-    purl = "pkg:generic/yarn@1.22.17?checksum=267982c61119a055ba2b23d9cf90b02d3d16c202c03cb0c3a53b9633eae37249&download_url=https://github.com/yarnpkg/yarn/releases/download/v1.22.17/yarn-v1.22.17.tar.gz"
-    sha256 = "812ad0ae25801885e0422d018d1e79a6ac5903b613621cb424159518631f8bfd"
-    source = "https://github.com/yarnpkg/yarn/releases/download/v1.22.17/yarn-v1.22.17.tar.gz"
-    source_sha256 = "267982c61119a055ba2b23d9cf90b02d3d16c202c03cb0c3a53b9633eae37249"
+    purl = "pkg:generic/yarn@1.22.19?checksum=732620bac8b1690d507274f025f3c6cfdc3627a84d9642e38a07452cc00e0f2e&download_url=https://github.com/yarnpkg/yarn/releases/download/v1.22.19/yarn-v1.22.19.tar.gz"
+    sha256 = "3fff3fb2684f8f87984db0ca5b6575b9dba7ee0f09127d9ecd85c1594c3e4c2d"
+    source = "https://github.com/yarnpkg/yarn/releases/download/v1.22.19/yarn-v1.22.19.tar.gz"
+    source_sha256 = "732620bac8b1690d507274f025f3c6cfdc3627a84d9642e38a07452cc00e0f2e"
     stacks = ["io.buildpacks.stacks.bionic"]
-    uri = "https://deps.paketo.io/yarn/yarn_1.22.17_linux_noarch_bionic_812ad0ae.tgz"
-    version = "1.22.17"
+    uri = "<UNKNOWN>"
+    version = "1.22.19"
 
   [[metadata.dependency-constraints]]
     constraint = "1.*"
